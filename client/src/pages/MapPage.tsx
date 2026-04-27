@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Navigation, Layers } from "lucide-react";
@@ -32,6 +32,12 @@ const icons: Record<string, L.DivIcon> = {
 };
 
 interface PinLocation { lat: number; lng: number; address?: string }
+
+function RecenterMap({ pos }: { pos: [number, number] }) {
+  const map = useMap();
+  useEffect(() => { map.flyTo(pos, 14); }, [pos[0], pos[1]]);
+  return null;
+}
 
 function MapClickHandler({ onPin }: { onPin: (loc: PinLocation) => void }) {
   useMapEvents({
@@ -79,6 +85,7 @@ export default function MapPage() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MapClickHandler onPin={(loc) => { setPin(loc); setSubmitOpen(true); }} />
+        {userPos && <RecenterMap pos={userPos} />}
 
         {/* Known sites */}
         {sites.map((site) => (

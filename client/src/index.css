@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Leaflet map CSS */
-@import "leaflet/dist/leaflet.css";
-
 /* Fix leaflet default icon paths with Vite */
 .leaflet-default-icon-path {
   background-image: url(leaflet/dist/images/marker-icon.png);
