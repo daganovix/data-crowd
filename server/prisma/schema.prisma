@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  paypalEmail  String?
+  tokenBalance Int      @default(0)
+  referralCode String   @unique
+  referredById String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  referredBy        User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals         User[]   @relation("UserReferrals")
+  submissions       Submission[]
+  tokenTxns         TokenTransaction[]
+  redemptions       Redemption[]
+  sentReferrals     Referral[] @relation("ReferrerRelation")
+  receivedReferrals Referral[] @relation("ReferredRelation")
+}
+
+model Site {
+  id          String   @id @default(cuid())
+  latitude    Float
+  longitude   Float
+  address     String?
+  projectName String?
+  projectType String?
+  status      String   @default("pending")
+  hubexoId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  submissions  Submission[]
+  participants Participant[]
+}
+
+model Submission {
+  id            String   @id @default(cuid())
+  siteId        String
+  userId        String
+  type          String
+  imageUrl      String?
+  extractedData String?
+  rawFormData   String?
+  status        String   @default("pending")
+  tokensAwarded Int      @default(0)
+  dataPoints    Int      @default(0)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  site      Site     @relation(fields: [siteId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  tokenTxns TokenTransaction[]
+}
+
+model Participant {
+  id          String   @id @default(cuid())
+  siteId      String
+  companyName String
+  role        String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+
+  site Site @relation(fields: [siteId], references: [id])
+}
+
+model TokenTransaction {
+  id           String   @id @default(cuid())
+  userId       String
+  amount       Int
+  type         String
+  description  String
+  submissionId String?
+  createdAt    DateTime @default(now())
+
+  user       User        @relation(fields: [userId], references: [id])
+  submission Submission? @relation(fields: [submissionId], references: [id])
+}
+
+model Redemption {
+  id           String   @id @default(cuid())
+  userId       String
+  amountTokens Int
+  method       String
+  status       String   @default("pending")
+  paypalEmail  String?
+  partnerName  String?
+  discountCode String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Referral {
+  id          String   @id @default(cuid())
+  referrerId  String
+  referredId  String
+  rewardGiven Boolean  @default(false)
+  pointsCount Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  referrer User @relation("ReferrerRelation", fields: [referrerId], references: [id])
+  referred User @relation("ReferredRelation", fields: [referredId], references: [id])
+}

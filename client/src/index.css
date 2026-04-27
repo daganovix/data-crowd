@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Leaflet map CSS */
+@import "leaflet/dist/leaflet.css";
+
+/* Fix leaflet default icon paths with Vite */
+.leaflet-default-icon-path {
+  background-image: url(leaflet/dist/images/marker-icon.png);
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom map marker styles */
+.site-marker-pending { filter: hue-rotate(0deg); }
+.site-marker-approved { filter: hue-rotate(80deg); }
+.site-marker-duplicate { filter: hue-rotate(200deg); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+
+/* Safe area padding for notched phones */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
