@@ -8,4 +8,5 @@ npx prisma migrate deploy 2>&1 || echo "Warning: migration had issues, continuin
 cd ..
 
 echo ">>> Starting server..."
-exec NODE_ENV=production node server/dist/index.js
+export NODE_ENV=production
+exec node server/dist/index.js
