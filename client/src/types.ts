@@ -5,6 +5,7 @@ export interface User {
   paypalEmail?: string | null;
   tokenBalance: number;
   referralCode: string;
+  country?: string;
   createdAt?: string;
 }
 

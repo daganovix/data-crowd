@@ -5,7 +5,7 @@ import { User } from "../types";
 interface AuthContextValue {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string, referralCode?: string) => Promise<void>;
+  register: (name: string, email: string, password: string, referralCode?: string, country?: string) => Promise<void>;
   logout: () => void;
   updateUser: (u: Partial<User>) => void;
 }
@@ -29,9 +29,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     persist(data.user, data.token);
   }, []);
 
-  const register = useCallback(async (name: string, email: string, password: string, referralCode?: string) => {
+  const register = useCallback(async (name: string, email: string, password: string, referralCode?: string, country?: string) => {
     const { data } = await api.post<{ token: string; user: User }>("/auth/register", { name, email, password, referralCode });
-    persist(data.user, data.token);
+    persist({ ...data.user, country }, data.token);
   }, []);
 
   const logout = useCallback(() => {

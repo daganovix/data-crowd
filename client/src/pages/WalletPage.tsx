@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, ArrowDownCircle, ArrowUpCircle, Gift, CreditCard, Loader2, CheckCircle, X } from "lucide-react";
+import { Coins, ArrowDownCircle, ArrowUpCircle, Gift, CreditCard, Loader2, CheckCircle, X, ExternalLink, ShieldAlert } from "lucide-react";
 import { api } from "../api/client";
 import { TokenTransaction, PartnerRebate } from "../types";
 import { useAuth } from "../contexts/AuthContext";
+import { TAX_AUTHORITIES, COUNTRY_OPTIONS } from "../lib/taxAuthorities";
 
 interface WalletData { balance: number; transactions: TokenTransaction[]; partners: PartnerRebate[] }
 
@@ -18,6 +19,8 @@ export default function WalletPage() {
   const [tokenAmount, setTokenAmount] = useState(1);
   const [loading, setLoading] = useState(false);
   const [redeemResult, setRedeemResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [taxCountry, setTaxCountry] = useState(user?.country ?? "");
+  const taxInfo = taxCountry ? TAX_AUTHORITIES[taxCountry] : null;
 
   const { data, isLoading } = useQuery<WalletData>({
     queryKey: ["tokens"],
@@ -133,6 +136,50 @@ export default function WalletPage() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Tax section */}
+      <div className="bg-slate-900 border border-amber-500/20 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <ShieldAlert size={16} className="text-amber-400 shrink-0" />
+          <h2 className="text-sm font-semibold text-amber-400">Tax Responsibility</h2>
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed">
+          Token earnings — including cash payouts and partner rebates — may constitute taxable income in your country of residence. You are solely responsible for declaring this income to your local tax authority. Hubexo B.V. provides no tax advice and accepts no tax liability on your behalf.
+        </p>
+
+        {/* Country selector */}
+        <div>
+          <label className="block text-xs text-slate-400 mb-1">Your country <span className="text-slate-500">(for tax guidance)</span></label>
+          <select
+            value={taxCountry}
+            onChange={(e) => {
+              setTaxCountry(e.target.value);
+              if (user) {
+                const updated = { ...user, country: e.target.value };
+                localStorage.setItem("user", JSON.stringify(updated));
+              }
+            }}
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+          >
+            <option value="">Select country…</option>
+            {COUNTRY_OPTIONS.map(([code, info]) => (
+              <option key={code} value={code}>{info.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {taxInfo && (
+          <a
+            href={taxInfo.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-amber-400 hover:text-amber-300 transition-colors"
+          >
+            <ExternalLink size={12} className="shrink-0" />
+            {taxInfo.label}
+          </a>
+        )}
       </div>
 
       {/* Redeem Modal */}
