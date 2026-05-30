@@ -18,7 +18,15 @@ interface Props {
   onSelect: (place: Place) => void;
   onBoundsChange: (bounds: Bounds, zoom: number) => void;
   focus: Focus | null;
+  userLoc: { lat: number; lng: number } | null;
 }
+
+const userLocIcon = L.divIcon({
+  className: "",
+  html: `<div style="width:18px;height:18px;border-radius:50%;background:#2563eb;border:3px solid #fff;box-shadow:0 0 0 4px rgba(37,99,235,.3),0 1px 4px rgba(0,0,0,.4);"></div>`,
+  iconSize: [18, 18],
+  iconAnchor: [9, 9],
+});
 
 type MarkerStatus = "visited" | "saved" | "discover";
 
@@ -123,6 +131,7 @@ export default function MapView({
   onSelect,
   onBoundsChange,
   focus,
+  userLoc,
 }: Props) {
   return (
     <MapContainer
@@ -141,6 +150,9 @@ export default function MapView({
       />
       <BoundsWatcher onChange={onBoundsChange} />
       <MapController focus={focus} />
+      {userLoc && (
+        <Marker position={[userLoc.lat, userLoc.lng]} icon={userLocIcon} interactive={false} />
+      )}
       {places.map((p) => (
         <PlaceMarker
           key={p.id}

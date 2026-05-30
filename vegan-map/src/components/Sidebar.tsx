@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Bookmark, Check, Loader2, MapPinned, Search, Star } from "lucide-react";
 import { KIND_EMOJI, KIND_LABEL, Place } from "../types";
 import { useUserData } from "../store/UserDataContext";
+import { distanceKm, formatDistance, LatLng } from "../lib/distance";
 
 export type Tab = "discover" | "saved" | "visited";
 
@@ -13,6 +14,7 @@ interface Props {
   error: string | null;
   zoomedEnough: boolean;
   selectedId?: string;
+  userLoc: LatLng | null;
   onSelect: (place: Place) => void;
 }
 
@@ -37,12 +39,15 @@ function StatusIcons({ id }: { id: string }) {
 function PlaceRow({
   place,
   selected,
+  userLoc,
   onSelect,
 }: {
   place: Place;
   selected: boolean;
+  userLoc: LatLng | null;
   onSelect: (p: Place) => void;
 }) {
+  const dist = userLoc ? distanceKm(userLoc, place) : null;
   return (
     <button
       onClick={() => onSelect(place)}
@@ -59,6 +64,7 @@ function PlaceRow({
         <span className="block truncate text-xs text-leaf-500">
           {KIND_LABEL[place.kind]}
           {place.vegan === "only" ? " · 100% vegan" : " · vegan options"}
+          {dist !== null && ` · ${formatDistance(dist)}`}
           {place.address ? ` · ${place.address}` : ""}
         </span>
       </span>
@@ -85,17 +91,23 @@ export default function Sidebar({
   error,
   zoomedEnough,
   selectedId,
+  userLoc,
   onSelect,
 }: Props) {
   const { data } = useUserData();
+
+  const byDistance = (a: Place, b: Place) =>
+    distanceKm(userLoc!, a) - distanceKm(userLoc!, b);
 
   const savedPlaces = useMemo(
     () =>
       Object.values(data)
         .filter((e) => e.wantToVisit)
         .sort((a, b) => b.updatedAt - a.updatedAt)
-        .map((e) => e.place),
-    [data]
+        .map((e) => e.place)
+        .sort(userLoc ? byDistance : () => 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, userLoc]
   );
 
   const visitedPlaces = useMemo(
@@ -108,8 +120,12 @@ export default function Sidebar({
   );
 
   const sortedDiscover = useMemo(
-    () => [...discoverPlaces].sort((a, b) => a.name.localeCompare(b.name)),
-    [discoverPlaces]
+    () =>
+      [...discoverPlaces].sort(
+        userLoc ? byDistance : (a, b) => a.name.localeCompare(b.name)
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [discoverPlaces, userLoc]
   );
 
   const tabs: { key: Tab; label: string; count: number }[] = [
@@ -178,6 +194,7 @@ export default function Sidebar({
                 key={p.id}
                 place={p}
                 selected={p.id === selectedId}
+                userLoc={userLoc}
                 onSelect={onSelect}
               />
             ))}
@@ -193,7 +210,7 @@ export default function Sidebar({
             />
           ) : (
             savedPlaces.map((p) => (
-              <PlaceRow key={p.id} place={p} selected={p.id === selectedId} onSelect={onSelect} />
+              <PlaceRow key={p.id} place={p} selected={p.id === selectedId} userLoc={userLoc} onSelect={onSelect} />
             ))
           ))}
 
@@ -206,7 +223,7 @@ export default function Sidebar({
             />
           ) : (
             visitedPlaces.map((p) => (
-              <PlaceRow key={p.id} place={p} selected={p.id === selectedId} onSelect={onSelect} />
+              <PlaceRow key={p.id} place={p} selected={p.id === selectedId} userLoc={userLoc} onSelect={onSelect} />
             ))
           ))}
       </div>

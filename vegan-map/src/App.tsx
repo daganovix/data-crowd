@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Download,
+  Leaf,
   List as ListIcon,
   Loader2,
   MapPin,
   MoreVertical,
+  Navigation,
   Search,
   Trash2,
   Upload,
@@ -15,6 +17,7 @@ import Sidebar, { Tab } from "./components/Sidebar";
 import PlaceDetail from "./components/PlaceDetail";
 import { Bounds, fetchVeganPlaces } from "./lib/overpass";
 import { geocode, GeocodeResult } from "./lib/geocode";
+import { LatLng } from "./lib/distance";
 import { Place } from "./types";
 import { useUserData } from "./store/UserDataContext";
 
@@ -192,6 +195,9 @@ export default function App() {
   const [selected, setSelected] = useState<Place | null>(null);
   const [focus, setFocus] = useState<Focus | null>(null);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [veganOnly, setVeganOnly] = useState(false);
+  const [userLoc, setUserLoc] = useState<LatLng | null>(null);
+  const [locating, setLocating] = useState(false);
 
   const abortRef = useRef<AbortController>();
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -230,19 +236,47 @@ export default function App() {
     [doFetch]
   );
 
-  // Markers: discovered places plus every saved/visited place (always visible).
+  // Apply the "100% vegan only" filter to discovered places.
+  const visibleDiscover = useMemo(
+    () => (veganOnly ? discoverPlaces.filter((p) => p.vegan === "only") : discoverPlaces),
+    [discoverPlaces, veganOnly]
+  );
+
+  // Markers: filtered discoveries plus every saved/visited place (always visible).
   const markerPlaces = useMemo(() => {
     const m = new Map<string, Place>();
     for (const e of Object.values(data)) {
       if (e.visited || e.wantToVisit) m.set(e.place.id, e.place);
     }
-    for (const p of discoverPlaces) m.set(p.id, p);
+    for (const p of visibleDiscover) m.set(p.id, p);
     return [...m.values()];
-  }, [discoverPlaces, data]);
+  }, [visibleDiscover, data]);
 
   const flyTo = (lat: number, lng: number, z?: number) => {
     focusNonce.current += 1;
     setFocus({ lat, lng, zoom: z, nonce: focusNonce.current });
+  };
+
+  const locateMe = () => {
+    if (!("geolocation" in navigator)) {
+      alert("Location isn't available in this browser.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setUserLoc(loc);
+        flyTo(loc.lat, loc.lng, 14);
+        setTab("discover");
+        setLocating(false);
+      },
+      () => {
+        alert("Couldn't get your location. Check your browser's location permission.");
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   };
 
   const selectFromList = (place: Place) => {
@@ -290,6 +324,37 @@ export default function App() {
               setTab("discover");
             }}
           />
+          {/* Filters */}
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              onClick={() => setVeganOnly((v) => !v)}
+              className={
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition " +
+                (veganOnly
+                  ? "bg-leaf-600 text-white"
+                  : "bg-leaf-100 text-leaf-700 hover:bg-leaf-200")
+              }
+              aria-pressed={veganOnly}
+            >
+              <Leaf size={13} className={veganOnly ? "fill-white" : ""} /> 100% vegan only
+            </button>
+            <button
+              onClick={locateMe}
+              className={
+                "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition " +
+                (userLoc
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-leaf-100 text-leaf-700 hover:bg-leaf-200")
+              }
+            >
+              {locating ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Navigation size={13} className={userLoc ? "fill-white" : ""} />
+              )}
+              Near me
+            </button>
+          </div>
         </div>
 
         {/* List or detail */}
@@ -300,10 +365,11 @@ export default function App() {
             <Sidebar
               tab={tab}
               onTabChange={setTab}
-              discoverPlaces={discoverPlaces}
+              discoverPlaces={visibleDiscover}
               loading={loading}
               error={error}
               zoomedEnough={zoom >= MIN_FETCH_ZOOM}
+              userLoc={userLoc}
               onSelect={selectFromList}
             />
           )}
@@ -318,6 +384,7 @@ export default function App() {
           onSelect={selectFromMap}
           onBoundsChange={handleBoundsChange}
           focus={focus}
+          userLoc={userLoc}
         />
 
         {/* Loading chip on the map */}

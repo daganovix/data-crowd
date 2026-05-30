@@ -15,7 +15,11 @@ want-to-visit) is stored in your browser via `localStorage`.
 - **City search** to jump anywhere in Europe (Nominatim).
 - **Rate** places 1–5 stars and **write private notes**.
 - **Mark visited** and keep a **Want-to-visit** wishlist.
-- Color-coded pins: green = visited, amber = want to visit, leaf = discovered.
+- **100% vegan only** filter to hide places that merely have vegan options.
+- **Near me** — use your location to recenter the map and sort lists by
+  distance (each place shows how far away it is).
+- Color-coded pins: green = visited, amber = want to visit, leaf = discovered,
+  blue dot = you.
 - Three lists in the sidebar: **Discover** (what's on the map now),
   **Want to visit**, and **Visited** (sorted by your rating).
 - **Export / import** your data as JSON, so you can back it up or move it to
@@ -46,7 +50,19 @@ npm run preview    # serve the production build locally
 ```
 
 The build is fully static — `dist/` can be hosted on any static host
-(Netlify, Vercel, GitHub Pages, S3, …).
+(Netlify, Vercel, GitHub Pages, S3, …). The Vite `base` is set to `./`
+(relative), so it works from any sub-path without extra config.
+
+### Deploy to GitHub Pages
+
+A workflow at `.github/workflows/deploy-vegan-map.yml` builds `vegan-map/` and
+publishes it to GitHub Pages automatically. To enable it:
+
+1. In the repo, go to **Settings → Pages** and set **Source: GitHub Actions**.
+2. Push to `main` (any change under `vegan-map/`), or run the
+   **Deploy Vegan Map to GitHub Pages** workflow manually from the Actions tab.
+
+The site will be served at `https://<owner>.github.io/<repo>/`.
 
 ## How data works
 
