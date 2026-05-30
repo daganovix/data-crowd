@@ -5,7 +5,11 @@ name: Deploy Vegan Map to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    # Deploys when the app changes on the repo's default branch.
+    # (Manual runs via workflow_dispatch work from any branch.)
+    branches:
+      - main
+      - claude/construction-crowdsource-app-yA3uI
     paths:
       - "vegan-map/**"
       - ".github/workflows/deploy-vegan-map.yml"
